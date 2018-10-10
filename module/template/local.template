@@ -1,0 +1,15 @@
+# location configure
+location ~ /{upstream_name} {{
+    # configure application
+    set $app_name "{app_name}"; # set application name
+    set $ups_pol '';
+    # rewrite by lua
+    rewrite_by_lua_file {openresty_path}/nginx/conf/lua/upstream_policy.lua;
+    # configure proxy
+    proxy_next_upstream off;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    # proxy upstream
+    proxy_pass http://$ups_pol;
+}}
