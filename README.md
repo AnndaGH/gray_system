@@ -1,1 +1,1 @@
-# gray_system
+# Gray System 灰度
