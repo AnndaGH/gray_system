@@ -275,9 +275,9 @@ def GrayCmd(cmdParm):
             print(IP + ":")
             print(os.popen("salt '{openrestyHost}' cmd.run 'service openresty reload' | grep -v '^{openrestyHost}'".format(openrestyHost=IP)).read())
     # 灰度锁
-    elif grayCmd == "graylock" and len(cmdParm) == 1 and re.search(r"^[Tt]rue$|^[Ff]alse$", parm[0]):
+    elif grayCmd == "graylock" and len(cmdParm) == 1 and re.search(r"^[Tt]rue$|^[Ff]alse$", cmdParm[0]):
         for IP in openrestyHost:
-            if ModTransl.Str2Bool(parm[0]) == True:
+            if ModTransl.Str2Bool(cmdParm[0]) == True:
                 os.popen("salt '{openrestyHost}' cmd.run 'touch /tmp/gray.lock'".format(openrestyHost=IP)).read()
             else:
                 os.popen("salt '{openrestyHost}' cmd.run 'rm -f /tmp/gray.lock'".format(openrestyHost=IP)).read()

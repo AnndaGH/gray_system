@@ -1,6 +1,5 @@
 -- import module
 local redis = require("resty.redis")
-local json = require "cjson"
 -- function
 function split(str,reps)
         local resultStrList = {}
@@ -36,7 +35,7 @@ if res == "1" then
 	-- analysis remote_addr
 	ip = split(ngx.var.proxy_add_x_forwarded_for,',')[1]
 	-- gain ip list
-	local res, err = redis_instance:get("gray_ip_list")
+	local res, err = redis_instance:get("grayhost")
 	res, err = loadstring("return " .. res)
 	local iplist = res()
 	-- traversal ip list
@@ -49,5 +48,5 @@ if res == "1" then
 	end
 else
 	ngx.var.ups_pol = "produce#" .. ngx.var.app_name
-	return redis_instance:close() 
+	return redis_instance:close()
 end
