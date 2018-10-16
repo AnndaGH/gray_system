@@ -4,24 +4,25 @@
 # import
 import sys
 import re
-import module.func_gray as gr
+import module.func_gray as ModFnGray
 
 
-def main():
-    del sys.argv[0] # remove gary-cli.py self
+def Main():
+    # remove gary-cli.py self
+    del sys.argv[0]
     # gain command
     if len(sys.argv) >= 1:
         # command filter
-        if re.search(r'^info$|^group(add|del)$|^app(add|del|mod)$|^host(add|del|mod)$|^gray(add|del)$|^test$|^update$|^graylock$|^grayhost(add|del)*$|^tttt$',sys.argv[0]):
-            gr.gray_cmd(sys.argv)
+        if re.search(r'^info$|^group(add|del)$|^app(add|del|mod)$|^host(add|del|mod)$|^gray(add|del)$|^test$|^update$|^graylock$|^testhost(add|del)*$|^tttt$',sys.argv[0]):
+            ModFnGray.GrayCmd(sys.argv)
         else:
-            gr.command_help()
+            ModFnGray.CmdHelp()
     else:
-        gr.command_help()
+        ModFnGray.CmdHelp()
 
 
 if __name__=='__main__':
-    main()
+    Main()
 
 
 exit()
