@@ -20,89 +20,8 @@ openrestyRoot = '/usr/local/openresty'
 openrestyHost = ['172.22.27.103', '172.22.27.104']
 
 
-class application_group(object):
-
-    def __init__(self, name):
-        self.name = name
-
-    def info(self):
-        group_data = GrayCmdSql("group_info", self.name)[1][0]
-        print("{group_name}: {domain_name}".format(group_name=group_data[1], domain_name=group_data[2]))
-
-    def group_add(self, domain):
-        GrayCmdSql("groupadd", self.name, domain)
-        CreateNginxVHost(self, domain)
-
-    def group_del(self):
-        GrayCmdSql("groupdel", self.name)
-        RemoveNginxVHost(self)
-
-    def app_add(self, app, ip_hash):
-        GrayCmdSql("appadd", self.name, appName, ip_hash)
-        ModDB.Execute("redis", "set", (self.name + "#" + appName, 0))
-        CreateNginxLocal(self, app)
-
-    def app_del(self, app):
-        GrayCmdSql("appdel", self.name, appName)
-        ModDB.Execute("redis", "del", self.name + "#" + appName)
-        RemoveNginxLocal(self, app)
-
-    def app_mod(self, app):
-        GrayCmdSql("appmod", self.name, appName, appIpHash)
-        sql = '''SELECT hosts FROM application WHERE `group` = \'{group_name}\' AND `name` = \'{app_name}\''''.format(group_name=self.name, app_name=appName)
-        appHosts = json.loads(ModDB.Execute("mysql", "search", sql)[0][0])
-
-
-class application(object):
-
-    def __init__(self, name):
-        self.name = name
-        self.hosts = {}
-
-    def info(self, group):
-        app_data = GrayCmdSql("app_info", groupName, self.name)[1][0]
-        group.info()
-        print(" --- {app_name}: hash:{ip_hash}".format(app_name=app_data[1], ip_hash=app_data[3]))
-        app_dict = json.loads(app_data[4])
-        for app_info in sorted(app_dict):
-            print("   - {ip_addr}:{port} backup:{backup} gray:{gray}".format(ip_addr=app_info, port=app_dict[app_info]['port'],backup=app_dict[app_info]['backup'], gray=app_dict[app_info]['gray']))
-
-    def get_ip_hash(self, group):
-        sql = '''SELECT ip_hash FROM application WHERE `group` = \'{group_name}\' AND `name` = \'{app_name}\''''.format(group_name=groupName, app_name=self.name)
-        if ModDB.Execute("mysql", "search", sql)[0][0] == "True":
-            self.ip_hash = True
-        else:
-            self.ip_hash = False
-        return self.ip_hash
-
-    def get_hosts(self, group):
-        sql = '''SELECT hosts FROM application WHERE `group` = \'{group_name}\' AND `name` = \'{app_name}\''''.format(group_name=groupName, app_name=self.name)
-        self.hosts = json.loads(ModDB.Execute("mysql", "search", sql)[0][0])
-
-    def host_add(self, group):
-        GrayCmdSql("hostadd", groupName, self.name, json.dumps(self.hosts))
-        ManageNginxUpstream(group, self)
-
-    def host_del(self, group):
-        GrayCmdSql("hostdel", groupName, self.name, json.dumps(self.hosts))
-        ManageNginxUpstream(group, self)
-
-    def host_mod(self, group):
-        GrayCmdSql("hostmod", groupName, self.name, json.dumps(self.hosts))
-        ManageNginxUpstream(group, self)
-
-    def gray_add(self, group):
-        GrayCmdSql("grayadd", groupName, self.name, json.dumps(self.hosts))
-        ManageNginxUpstream(group, self)
-
-    def gray_del(self, group):
-        GrayCmdSql("graydel", groupName, self.name, json.dumps(self.hosts))
-        ManageNginxUpstream(group, self)
-
-
+# function gray command
 def GrayCmd(cmdParm):
-    # global var
-    # global grayCmd, groupName, appName
     # var grayCmd
     grayCmd = cmdParm[0]
     # remove grayCmd
@@ -232,23 +151,23 @@ def GrayCmd(cmdParm):
                     ManageNginxUpstream(groupName, appName)
                     print("the host [%s] del successful." % appIP)
                     PrintAppInfo(groupName, appName)
-
-    # 修改主机(待定)
-    elif grayCmd == "hostmod" and len(cmdParm) == 4 and re.search(r"^([0-9]{1,3}\.){3}([0-9]{1,3})$", parm[2]) and re.search(r"^[Tt]rue$|^[Ff]alse$", parm[3]):
+    # 修改主机
+    elif grayCmd == "hostmod" and len(cmdParm) == 4 and re.search(r"^([0-9]{1,3}\.){3}([0-9]{1,3})$", cmdParm[2]) and re.search(r"^[Tt]rue$|^[Ff]alse$", cmdParm[3]):
         groupName = cmdParm[0]
         appName = cmdParm[1]
         appIP = cmdParm[2]
-        appBackup = ModTransl.Str2Bool(parm[3])
+        appBackup = ModTransl.Str2Bool(cmdParm[3])
         if HostIpCheck(groupName, appName, appIP, 2):
             appHosts = json.loads(GrayCmdSql("app_hosts", groupName, appName)[0][0])
-            if not HostGrayCheck(appName, appHosts, 0):
-                if appHosts[parm[3]]['backup'] != ModTransl.Str2Bool(parm[4]):
-                    appHosts[parm[3]]['backup'] = ModTransl.Str2Bool(parm[4])
-                    app.host_mod(group)
-                    print("modify")
-                else:
-                    print("exit")
-
+            # if not HostGrayCheck(appName, appHosts, 0):
+            if appHosts[appIP]['backup'] != appBackup:
+                appHosts[appIP]['backup'] = appBackup
+                GrayCmdSql(grayCmd, groupName, appName, json.dumps(appHosts))
+                ManageNginxUpstream(groupName, appName)
+                print("the host [%s] modify successful." % appIP)
+            else:
+                print("the host [%s] backup state is already [%s]." % (appIP, appBackup))
+            PrintAppInfo(groupName, appName)
     # 添加灰度
     elif grayCmd == "grayadd" and len(cmdParm) == 3 and re.search(r"^([0-9]{1,3}\.){3}([0-9]{1,3})$", cmdParm[2]):
         groupName = cmdParm[0]
@@ -323,8 +242,14 @@ def GrayCmd(cmdParm):
                 os.remove("/var/cache/salt/master/file_lists/roots/base.p")  # 删除salt-master文件缓存
             print("    file sync failed: " + os.popen("salt '{openrestyHost}' state.highstate | awk '/^Failed/{{print $2}}'".format(openrestyHost=IP)).read())
             print(os.popen("salt '{openrestyHost}' cmd.run 'service openresty configtest' | grep -v '^{openrestyHost}'".format(openrestyHost=IP)).read())
+        os.popen("rm -f /usr/local/unsops/gray_system/test.lock")
     # 更新配置
     elif grayCmd == "update":
+        if os.path.exists('/usr/local/unsops/gray_system/test.lock'):
+            print("==================== !!! Warning !!! ====================")
+            print("              Please run command test first              ")
+            print("==================== !!! Warning !!! ====================")
+            exit(1)
         appData = GrayCmdSql("app_data")
         appGrayHostData = []
         # generate app gray host list
@@ -356,13 +281,11 @@ def GrayCmd(cmdParm):
                 os.popen("salt '{openrestyHost}' cmd.run 'touch /tmp/gray.lock'".format(openrestyHost=IP)).read()
             else:
                 os.popen("salt '{openrestyHost}' cmd.run 'rm -f /tmp/gray.lock'".format(openrestyHost=IP)).read()
-    # 测试函数
-    elif grayCmd == "tttt":
-        # PrintAppInfo("test_unspay_com", "small_agent_web")
-        GroupCheck("www_8866_com", 0)
-        AppCheck("www_8866_com","caifu_fro", 0)
     else:
         CmdHelp()
+    # 配置测试锁
+    if grayCmd != "test":
+        os.popen("touch /usr/local/unsops/gray_system/test.lock")
     # disconnect database
     ModDB.Disconnect("mysql")
 
@@ -532,30 +455,25 @@ def ManageNginxUpstream(groupName, appName):
 
 # gray command sql execute
 def GrayCmdSql(grayCmd, *parm):
+    # 应用数据查询
     if grayCmd == "app_data":
         sql = '''SELECT * FROM application'''
         return ModDB.Execute("mysql", "search", sql)
-
     elif grayCmd == "app_info":
         sql = '''SELECT * FROM application WHERE `group` = \'{group_name}\' AND `name` = \'{app_name}\''''.format(group_name=parm[0],app_name=parm[1])
         return "mysql", ModDB.Execute("mysql", "search", sql)
-
     elif grayCmd == "app_hosts":
         sql = '''SELECT hosts FROM application WHERE `group` = \'{group_name}\' AND `name` = \'{app_name}\''''.format(group_name=parm[0],app_name=parm[1])
         return ModDB.Execute("mysql", "search", sql)
-
     elif grayCmd == "app_ip_hash":
         sql = '''SELECT ip_hash FROM application WHERE `group` = \'{group_name}\' AND `name` = \'{app_name}\''''.format(group_name=parm[0],app_name=parm[1])
         return ModDB.Execute("mysql", "search", sql)
-
     elif grayCmd == "group_info":
         sql = '''SELECT * FROM application_group WHERE `name` = \'{group_name}\''''.format(group_name=parm[0])
         return "mysql", ModDB.Execute("mysql", "search", sql)
-
     elif grayCmd == "group_data":
         sql = '''SELECT * FROM application_group'''
         return ModDB.Execute("mysql", "search", sql)
-
     # 添加应用组
     elif grayCmd == "groupadd":
         sql = '''INSERT INTO application_group(name,domain) VALUES (\'{group_name}\',\'{group_domain}\')'''.format(group_name=parm[0],group_domain=parm[1])
@@ -623,10 +541,11 @@ def CmdHelp():
     groupdel GROUP_NAME                         -- e.g. groupdel test_unspay_com
     
     appadd GROUP_NAME APP_NAME IP_HASH          -- e.g. appadd test_unspay_com small_agent_web false
-    appdel GROUP_NAME APP_NAME                  -- e.g. appdel test_unspay_com small_agent_web
     appmod GROUP_NAME APP_NAME IP_HASH          -- e.g. appmod test_unspay_com small_agent_web true
+    appdel GROUP_NAME APP_NAME                  -- e.g. appdel test_unspay_com small_agent_web
     
     hostadd GROUP_NAME APP_NAME IP PORT BACKUP  -- e.g. hostadd test_unspay_com small_agent_web 172.22.27.103 8081 false
+    hostmod GROUP_NAME APP_NAME IP BACKUP       -- e.g. hostadd test_unspay_com small_agent_web 172.22.27.103 true
     hostdel GROUP_NAME APP_NAME IP              -- e.g. hostadd test_unspay_com small_agent_web 172.22.27.103
     
     grayadd GROUP_NAME APP_NAME IP              -- e.g. hostadd test_unspay_com small_agent_web 172.22.27.104

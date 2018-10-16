@@ -13,7 +13,7 @@ def Main():
     # gain command
     if len(sys.argv) >= 1:
         # command filter
-        if re.search(r'^info$|^group(add|del)$|^app(add|del|mod)$|^host(add|del|mod)$|^gray(add|del)$|^test$|^update$|^graylock$|^testhost(add|del)*$|^tttt$',sys.argv[0]):
+        if re.search(r'^info$|^group(add|del)$|^app(add|del|mod)$|^host(add|del|mod)$|^gray(add|del)$|^test$|^update$|^graylock$|^testhost(add|del)*$',sys.argv[0]):
             ModFnGray.GrayCmd(sys.argv)
         else:
             ModFnGray.CmdHelp()
