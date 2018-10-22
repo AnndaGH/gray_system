@@ -550,9 +550,13 @@ def CmdHelp():
     
     grayadd GROUP_NAME APP_NAME IP              -- e.g. hostadd test_unspay_com small_agent_web 172.22.27.104
     graydel GROUP_NAME APP_NAME IP              -- e.g. hostadd test_unspay_com small_agent_web 172.22.27.105
-        
+
+    testhost
+    testhostadd IP                              -- e.g. testhostadd 172.22.30.101 
+    testhostdel IP                              -- e.g. testhostdel 172.22.30.101 
+
     test
     update
     
-    graylock ENABLE                             -- e.g. graylock true
+    graylock ENABLED                             -- e.g. graylock true
     ''')
