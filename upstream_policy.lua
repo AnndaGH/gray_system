@@ -46,7 +46,5 @@ if res == "1" then
 			return redis_instance:close()
 	        end
 	end
-else
-	ngx.var.ups_pol = "produce#" .. ngx.var.app_name
-	return redis_instance:close()
-end
+ngx.var.ups_pol = "produce#" .. ngx.var.app_name
+return redis_instance:close()
