@@ -545,11 +545,11 @@ def CmdHelp():
     appdel GROUP_NAME APP_NAME                  -- e.g. appdel test_unspay_com small_agent_web
     
     hostadd GROUP_NAME APP_NAME IP PORT BACKUP  -- e.g. hostadd test_unspay_com small_agent_web 172.22.27.103 8081 false
-    hostmod GROUP_NAME APP_NAME IP BACKUP       -- e.g. hostadd test_unspay_com small_agent_web 172.22.27.103 true
-    hostdel GROUP_NAME APP_NAME IP              -- e.g. hostadd test_unspay_com small_agent_web 172.22.27.103
+    hostmod GROUP_NAME APP_NAME IP BACKUP       -- e.g. hostmod test_unspay_com small_agent_web 172.22.27.103 true
+    hostdel GROUP_NAME APP_NAME IP              -- e.g. hostdel test_unspay_com small_agent_web 172.22.27.103
     
-    grayadd GROUP_NAME APP_NAME IP              -- e.g. hostadd test_unspay_com small_agent_web 172.22.27.104
-    graydel GROUP_NAME APP_NAME IP              -- e.g. hostadd test_unspay_com small_agent_web 172.22.27.105
+    grayadd GROUP_NAME APP_NAME IP              -- e.g. grayadd test_unspay_com small_agent_web 172.22.27.104
+    graydel GROUP_NAME APP_NAME IP              -- e.g. graydel test_unspay_com small_agent_web 172.22.27.105
 
     testhost
     testhostadd IP                              -- e.g. testhostadd 172.22.30.101 
